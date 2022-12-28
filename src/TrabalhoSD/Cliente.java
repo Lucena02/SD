@@ -1,3 +1,5 @@
+package TrabalhoSD;
+
 import java.util.Scanner;
 
 

@@ -1,10 +1,12 @@
+package TrabalhoSD;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Login {
-    public Map<String, String> contas = new HashMap<String, String>();
+    public Map<String, String> contas = new HashMap<>();
     private ReentrantLock lock = new ReentrantLock();
 
 
@@ -23,9 +25,7 @@ public class Login {
                     return false;
                 }
             }
-
-        }
-        finally {lock.unlock();}
+        } finally {lock.unlock();}
 
         return true;
     }

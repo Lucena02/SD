@@ -11,6 +11,11 @@ public class Tuple {
         this.y = y;
     }
 
+    public  Tuple(){
+        this.x =-10;
+        this.y=-10;
+    }
+
     public double calculaDistancia(Tuple tuple){
         return Math.abs((x)- tuple.getX())+Math.abs(y-tuple.getY());
     }
@@ -31,7 +36,12 @@ public class Tuple {
         this.y = y;
     }
 
-
+    public boolean existeTuplo(){
+        if((this.getX() + this.getY())<0){
+            return false;
+        }
+        return true;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -48,7 +58,7 @@ public class Tuple {
 
     @Override
     public String toString(){
-        return "(" + x + "," + y + ")";
+        return "Localização: (" + x + "," + y + ")";
     }
 
 }

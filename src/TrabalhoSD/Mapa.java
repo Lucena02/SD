@@ -72,16 +72,39 @@ public class Mapa {
          // Verificar isto
         try {
             this.lock.readLock().lock();
-            double k = fDistance;
             for (int i = coordX - fDistance; i <= coordX + fDistance; i++) {
                 for (int j = coordY - fDistance; j <= coordY + fDistance; j++) {
-                    if (i >= 0 && i < N && j >= 0 && j < N && !(i == coordX && j == coordY) && this.map[i][j] != 0 && (Math.abs((coordX)-i)+Math.abs(coordY-j)) <= fDistance) {
+                    if (i >= 0 && i < N && j >= 0 && j < N && !(i == coordX && j == coordY) && this.map[i][j] != 0 && (Math.abs((coordX)-i)+Math.abs(coordY-j)) <= fDistance) { //pq !(i == coordX && j == coordY) ?
                         Tuplos.add(new Tuple(i,j));
                     }
                 }
             }
             return Tuplos;
 
+        }
+        finally{this.lock.readLock().unlock();}
+    }
+
+
+    public Tuple find_Perto(int fDistance, int coordX, int coordY){ //TESTAR
+        Tuple closestTuple = new Tuple();
+        int minDistance = Integer.MAX_VALUE;
+        try {
+            this.lock.readLock().lock();
+
+            for (int i = coordX - fDistance; i <= coordX + fDistance; i++) {
+                for (int j = coordY - fDistance; j <= coordY + fDistance; j++) {
+                    int distance = Math.abs((coordX)-i)+Math.abs(coordY-j);
+                    if (i >= 0 && i < N && j >= 0 && j < N && !(i == coordX && j == coordY) && this.map[i][j] != 0 && distance <= fDistance) {
+                        if (distance < minDistance) {
+                        minDistance = distance;
+                        closestTuple.setX(i);
+                        closestTuple.setY(j);
+                    }
+                    }
+                }
+            }
+            return closestTuple;
         }
         finally{this.lock.readLock().unlock();}
     }
@@ -100,7 +123,7 @@ public class Mapa {
         } finally{this.lock.readLock().unlock();}
     }
 
-    public List<Tuple> checkT_Empty(int fDistance){
+    public List<Tuple> checkT_Empty(int fDistance){ //Coloca numa lista as coordenadas onde não há trotinetes
         List<Tuple> Tuplos = new ArrayList<>();
 
         try{
@@ -115,6 +138,19 @@ public class Mapa {
             return Tuplos;
         } finally{this.lock.readLock().lock();}
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }

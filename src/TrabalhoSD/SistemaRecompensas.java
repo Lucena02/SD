@@ -11,48 +11,86 @@ public class SistemaRecompensas {
     private Map<Integer,Recompensa> mapRecompensas = new HashMap<>();
     private ReentrantReadWriteLock l;
     private Condition c;
+    private boolean flag;
 
     public SistemaRecompensas(ReentrantReadWriteLock l) {
         this.l= l;
         this.c = l.writeLock().newCondition();
+        this.flag = false;
     }
 
 
     public void signalSistema(){
-        this.c.signal();
+        try {l.writeLock().lock();
+            this.flag=false;
+            this.c.signal();
+
+        }finally {
+            l.writeLock().unlock();
+        }
     }
 
-    public void awaitSistema() throws InterruptedException {
-        this.c.await();
+    public Condition getCondition(){
+        return c;
     }
 
 
+    public void update_Recompensas(Mapa mapa, notificationHandler nH) throws InterruptedException {// O sistema sempre que acorda vê o número de trotinetes repetidas e cria recompensas para tais
+        while(true) {
+            try {
+                l.writeLock().lock();
+                    while (this.flag) {
+                        c.await();
+                    }
+                if (this.mapRecompensas != null) this.mapRecompensas.clear();
 
-    public void update_Recompensas(Mapa mapa){ // O sistema sempre que acorda vê o número de trotinetes repetidas e cria recompensas para tais
-        if (this.mapRecompensas != null) this.mapRecompensas.clear();
+                List<Tuple> trotinetesPremiadas = mapa.checkT_Abundantes();
+                List<Tuple> chegadasPremiadas = mapa.checkT_Empty(2);
 
-        List <Tuple> trotinetesPremiadas = mapa.checkT_Abundantes();
-        List <Tuple> chegadasPremiadas = mapa.checkT_Empty(2);
+                Iterator<Tuple> iterator1 = trotinetesPremiadas.iterator();
+                Iterator<Tuple> iterator2 = chegadasPremiadas.iterator();
 
-        Iterator<Tuple> iterator1 = trotinetesPremiadas.iterator();
-        Iterator<Tuple> iterator2 = chegadasPremiadas.iterator();
+                Tuple TupleTrots;
+                Tuple TuploChegada;
+                int i = 0;
 
-        Tuple TupleTrots;
-        Tuple TuploChegada;
-        int i=0;
+                while (iterator1.hasNext() && iterator2.hasNext()) {
+                    TupleTrots = iterator1.next();
+                    TuploChegada = iterator2.next();
+                    mapRecompensas.put(i, new Recompensa(TupleTrots, TuploChegada));
+                    i++;
+                }
 
-        while (iterator1.hasNext() && iterator2.hasNext()) {
-            TupleTrots = iterator1.next();
-            TuploChegada = iterator2.next();
-            mapRecompensas.put(i, new Recompensa(TupleTrots,TuploChegada));
-            i++;
+                //System.out.print("\n");
+                //System.out.print(trotinetesPremiadas);
+                //System.out.print("\n");
+                //System.out.print(chegadasPremiadas);
+
+                this.flag=true;
+                //nH.signalSistema();
+
+
+            } finally {
+                l.writeLock().lock();
+            }
         }
 
-        System.out.print("\n");
-        System.out.print(trotinetesPremiadas);
-        System.out.print("\n");
-        System.out.print(chegadasPremiadas);
+
     }
+
+
+
+     public Recompensa verificaRecompensa(Tuple tuplo){
+        for(Map.Entry<Integer, Recompensa> entry : mapRecompensas.entrySet()){
+            if(tuplo.equals(entry.getValue().getOrigem())){
+                return entry.getValue();
+            }
+        }
+        return null;
+     }
+
+
+
 
     public List<Integer> checkRecompensas(Tuple tuplo,int fDistance){
         List<Integer> ids = new ArrayList<>();

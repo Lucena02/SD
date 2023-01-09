@@ -17,7 +17,7 @@ public class main {
         m.printMatrix();
         //m.checkT_Livres(2, 2,2);
         SistemaRecompensas sistema = new SistemaRecompensas(m.getLock());
-        sistema.update_Recompensas(m);
+        //sistema.update_Recompensas(m);
         System.out.print("\n \n \n");
         System.out.print(sistema.getRecompensasDistancia(new Tuple(2,2), 5));
         System.out.print("\n \n \n");

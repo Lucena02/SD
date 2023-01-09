@@ -17,9 +17,6 @@ public class ClienteHandler {
         Demultiplexer m = new Demultiplexer(new TaggedConnection(s));
         Cliente cliente = new Cliente();
 
-        byte[] buffer = new byte[256];
-        ByteArrayInputStream baos = new ByteArrayInputStream(buffer);
-        DataInputStream in = new DataInputStream(baos);
 
         Menu menu = new Menu();
 
@@ -40,15 +37,15 @@ public class ClienteHandler {
         while (op != 0 && !(cliente.isLogin())) {
             menu.apresentarMenuGF();
             op = menu.readOption();
-            System.out.println(); //?????
+            System.out.println();
 
             switch (op) {
                 case 0:
-                    System.out.println("A sair...");
+                    System.out.println("A sair...\n\n");
                     break;
                 case 1:
                     Thread register = new Thread(() -> {
-                        System.out.println("Register:");
+                        System.out.println("Register:\n\n");
                         cliente.register(m, menu);
                     });
                     register.start();
@@ -56,18 +53,18 @@ public class ClienteHandler {
                     break;
                 case 2:
                     Thread login = new Thread(() -> {
-                        System.out.println("Login:");
+                        System.out.println("Login:\n\n");
                         cliente.login(m, menu);
                     });
                     login.start();
                     login.join();
                     break;
                 default:
-                    System.out.println("Erro na escolha");
+                    System.out.println("Erro na escolha\n\n");
                     break;
             }
 
-            System.out.println(); //??????
+            System.out.println();
         }
 
 
@@ -81,10 +78,12 @@ public class ClienteHandler {
 
                     switch (op) {
                         case 0:
-                            System.out.println("A sair...");
+                            System.out.println("A sair...\n\n");
                             s.close();
                             break;
+
                         case 1: // Listar trotinetes livres
+                            System.out.println("Trotinetes Disponiveis:");
                             Thread trotiLivre = new Thread(() -> {
                                 try {
                                     cliente.comunicarLocalizacao(m, menu, 3);
@@ -103,7 +102,8 @@ public class ClienteHandler {
                                     System.out.println(result);
 
 
-                                } catch (Exception e) {
+                                }
+                                catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
                             });
@@ -111,7 +111,7 @@ public class ClienteHandler {
                             trotiLivre.join();
                             break;
                         case 2:
-                            System.out.println("Recompensas Disponiveis:");
+                            System.out.println("Recompensas Disponiveis:\n\n");
 
                             Thread recompensas = new Thread(() -> {
                                 try {
@@ -132,7 +132,8 @@ public class ClienteHandler {
 
                                     System.out.println(rewards);
 
-                                } catch (Exception e) {
+                                }
+                                catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
                             });
@@ -140,41 +141,39 @@ public class ClienteHandler {
                             recompensas.join();
                             break;
                         case 3:
-                            System.out.println("Reservar trotinete:");
+                            System.out.println("Reservar trotinete:\n\n");
 
                             Thread reserva = new Thread(() -> {
                                 try {
+                                    System.out.println("Introduza a sua localizacao");
                                     cliente.comunicarLocalizacao(m, menu, 5);
 
-                                    byte[] size = m.receive(5);
-                                    int tamanho = size[0];
+                                    Thread.sleep(500);
+
+                                    //"tamanho" (numero de mensagens de resposta)
+                                    byte[] inteiro = m.receive(5);
+                                    int tamanho = inteiro[0];
+
 
                                     switch (tamanho){
 
                                         case 1:
-
-                                            //erro na escolha da trotinete
-                                            byte [] resposta1 = m.receive(5);
-                                            String erro = new String(resposta1);
-
-                                            System.out.println(erro);
+                                            System.out.println("Failure");
                                             break;
-
                                         case 2:
-
                                             //sucesso na reserva da trotinete
-                                            byte [] datax = m.receive(5);
-                                            int coordx = datax[0];
-                                            byte [] datay = m.receive(5);
-                                            int coordy = datay[0];
+
                                             byte [] resposta2 = m.receive(5);
                                             String sucesso = new String(resposta2);
+                                            cliente.setHasReserva(true);
 
-                                            System.out.println("Trotinete reservada com sucesso!\n\nCoordenadas: x->" + coordx + " y->" + coordy + "\nCodigo de reserva: " + sucesso);
+                                            System.out.println("Trotinete reservada com sucesso!\n\n" + sucesso);
+                                            cliente.setHasReserva(true);
 
+                                            break;
                                         default:
-
-                                            System.out.println("Erro na escolha");
+                                            System.out.println("Não deu\n");
+                                            cliente.setHasReserva(false);
                                             break;
                                     }
 
@@ -187,39 +186,72 @@ public class ClienteHandler {
                             reserva.join();
                             break;
                         case 4:
-                            System.out.println("Estacionar trotinete");
+                            System.out.println("Estacionar trotinete:\n\n");
 
                             Thread estaciona = new Thread(() -> {
                                 try {
-                                    cliente.comunicarLocalizacao(m, menu, 6);
+                                    if (cliente.isHasReserva()) {
 
-                                    byte[] teste = menu.lerString("Insira o codigo de reserva").getBytes();
-                                    m.send(6, teste);
+                                        byte[] teste = menu.lerString("Insira o codigo de reserva\n").getBytes();
+                                        cliente.comunicarLocalizacao(m, menu, 6);
 
-                                    Thread.sleep(100);
-                                    m.receive(6);
+                                        m.send(6, teste);
 
-                                    //falta interpretar a resposta do sevidor
-                                    //sucesso -> coordenadas da trota e código de reserva
-                                    //insucesso -> codigo de insucesso
+                                        Thread.sleep(500);
+
+                                        //valor a pagar
+                                        byte[] resposta3 = m.receive(6);
+                                        double valorviagem = resposta3[0];
+
+                                        if (valorviagem != -1) {
 
 
-                                } catch (Exception e) {
+
+                                            System.out.println("Tem de pagar " + valorviagem + " pela viagem\n");
+                                            cliente.setHasReserva(false);
+                                        }
+                                        else {
+                                            System.out.println("Esse codigo nao esta associado a nenhuma reserva");
+                                        }
+                                    }
+                                    else {
+                                        System.out.println("Nao e possivel associar uma trotinete ao utilizador atual");
+                                    }
+                                } catch (Exception e){
                                     throw new RuntimeException(e);
                                 }
                             });
-
                             estaciona.start();
                             estaciona.join();
                             break;
                         case 5:
-                            System.out.println("Notificoes");
+                            System.out.println("Notificoes:\n\n");
 
-                            //
+                            m.send(7, cliente.getUsername().getBytes());
+                            cliente.comunicarLocalizacao(m, menu, 7);
+
+                            Thread.sleep(100);
+
+                            //o servidor devolve um bool (true -> confirmacao das alteracoes)
+                            byte [] resposta1 = m.receive(7);
+                            boolean notificacoes = resposta1[0] != 0;
+
+                            if(notificacoes) {
+                                if (!cliente.isNotificacao()) {
+
+                                    System.out.println("Notidicacoes ativadas com  sucesso!\n");
+                                    cliente.setNotificacao(true);
+                                }
+                                else{
+
+                                    System.out.println("Notificacoes desativadas com sucesso!\n");
+                                    cliente.setNotificacao(false);
+                                }
+                            }
 
                             break;
                         default:
-                            System.out.println("Erro na escolha");
+                            System.out.println("Erro na escolha\n");
                             break;
                     }
 
@@ -229,5 +261,6 @@ public class ClienteHandler {
                 }
             }
         }
+        s.close();
     }
 }

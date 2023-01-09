@@ -1,22 +1,24 @@
 package TrabalhoSD;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-/*
+
 public class notificationHandler {
 
     private Map<String, Tuple>  tuplosClientes = new HashMap<>();
     private Map<String, TaggedConnection> clientes = new HashMap<>();
-    private int fdistante;
-
+    private int fdistante=2;
     private final ReentrantLock l = new ReentrantLock();
+    private Condition c = l.newCondition();
 
 
-
+    public notificationHandler(){}
 
     /**
      * Método que adiciona uma Socket a um utilizador.
@@ -24,7 +26,7 @@ public class notificationHandler {
      * @param username String com o nome do utilizador.
      * @param c    Taggedconnection do utilizador.
      */
-/*
+
     public void addClient(String username, TaggedConnection c, Tuple t ) {
         try {
             l.lock();
@@ -34,13 +36,13 @@ public class notificationHandler {
             l.unlock();
         }
     }
-*/
+
     /**
      * Método que remove uma Socket de um utilizador.
      *
      * @param username String com o nome do utilizador.
      */
-    /*
+
     public void removeClient(String username) {
         try {
             l.lock();
@@ -51,13 +53,20 @@ public class notificationHandler {
         }
     }
 
+    public void signalSistema(){
+        this.c.signal();
+    }
 
 
+    public void notificarALL(List<Recompensa> recompensasList){
 
-    public void notificarALL(List<Recompensa> recompensasList){ // Modificar, versão 0.1
+
         List<Recompensa> recompensasEnviadas = new ArrayList<>();
         try{
+
             l.lock();
+
+            this.c.await();
 
             for(Map.Entry<String, Tuple> entry: this.tuplosClientes.entrySet() ){
                 for(Recompensa r : recompensasList){
@@ -65,22 +74,28 @@ public class notificationHandler {
                         recompensasEnviadas.add(r);
                     }
                 }
+                TaggedConnection tcliente = this.clientes.get(entry.getKey());
+                tcliente.send(10, new byte[]{(byte)recompensasEnviadas.size()});
 
-
-                this.clientes.get(entry.getKey()).send(1,de);
+                for(Recompensa r : recompensasEnviadas) {
+                    tcliente.send(10, new byte[]{(byte)r.getOrigem().getX()});
+                    tcliente.send(10, new byte[]{(byte)r.getOrigem().getY()});
+                    tcliente.send(10, new byte[]{(byte)r.getDestino().getX()});
+                    tcliente.send(10, new byte[]{(byte)r.getDestino().getY()});
+                    tcliente.send(10, new byte[]{(byte)r.getDistancia()});
+                    tcliente.send(10, new byte[]{(byte)r.getGanho()});
+                }
                 recompensasEnviadas.clear();
             }
 
-
-
-
-
+            } catch (IOException e) {
+            throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+                l.unlock();
             }
-        }finally {
-            l.unlock();
-        }
     }
 
 
 }
-*/

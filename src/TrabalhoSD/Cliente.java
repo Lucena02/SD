@@ -7,17 +7,17 @@ import java.util.Scanner;
 
 public class Cliente {
 
-    private  String username;
-    private  String password;
-    private  boolean login;
-    private  boolean hasReveserva; // se já tem uma reserva ou não
-    private  boolean notificacao; // se quer receber notificações
+    private String username;
+    private String password;
+    private boolean login;
+    private boolean hasReserva; // se já tem uma reserva ou não
+    private boolean notificacao; // se quer receber notificações
 
     public Cliente(){
         this.username= "";
         this.password ="";
         this.login = false;
-        this.hasReveserva = false;
+        this.hasReserva = false;
         this.notificacao=false;
     }
 
@@ -45,12 +45,12 @@ public class Cliente {
         this.login = login;
     }
 
-    public boolean isHasReveserva() {
-        return hasReveserva;
+    public boolean isHasReserva() {
+        return hasReserva;
     }
 
-    public void setHasReveserva(boolean hasReveserva) {
-        this.hasReveserva = hasReveserva;
+    public void setHasReserva(boolean hasReveserva) {
+        this.hasReserva = hasReveserva;
     }
 
     public boolean isNotificacao() {
@@ -142,7 +142,4 @@ public class Cliente {
 
         }
     }
-
-
-
 }

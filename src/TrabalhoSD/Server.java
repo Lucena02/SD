@@ -1,5 +1,8 @@
 package TrabalhoSD;
 
+import com.sun.nio.sctp.NotificationHandler;
+import jdk.jfr.consumer.RecordedMethod;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -20,8 +23,8 @@ class sistemaMapaRecompensas {
     private SistemaRecompensas sistemaDeRecompenas;
     private HashMap<String, Tuple> codigosReserva = new HashMap<>();
     private HashMap<String,Long> startTimeMap = new HashMap<>();
-
     private final ReentrantLock lock = new ReentrantLock();
+    private HashMap<String,Recompensa> clienteRecompensa = new HashMap<>();
 
     public sistemaMapaRecompensas(){
         this.mapa= new Mapa();
@@ -36,73 +39,116 @@ class sistemaMapaRecompensas {
 
     public SistemaRecompensas getSistemaDeRecompensas() { return this.sistemaDeRecompenas;}
 
-    public String reservaTrot(Tuple tuplo){ //TESTAR. O Cliente precisa de dar parse à String para saber o codigo de reserva/failure e a localização.
-                                            // Alterar o stringbuilder para facilitar o parse se necessário.
+    public HashMap<String,Tuple> getCodigosReserva () {
+        return this.codigosReserva;
+    }
+
+
+    public String reservaTrot(Tuple tuplo){
+
         Tuple local =null;
+
+
+
+
         try {
             lock.lock();
+
             local = mapa.find_Perto(2, tuplo.getX(), tuplo.getY());
-            if (!local.existeTuplo()) return "FAILURE";
+            if (!local.existeTuplo()) return null;
             mapa.removeTrotinete(local.getX(), local.getY());
+
         }finally {
             lock.unlock();
         }
 
         String code = generateRandomCode();
+        System.out.println(code);
 
-        //no minimo um lock aqui - 1
-        codigosReserva.put(code,local);
-        //no minimo um lock aqui - 1;
+        try {
+            lock.lock();
+            codigosReserva.put(code, local);
+            /*
+            Recompensa r = sistemaDeRecompenas.verificaRecompensa(tuplo);
+            if(!(r==null)) this.clienteRecompensa.put(code,r);
 
-        StringBuilder resposta = new StringBuilder();
-        resposta.append("Código de Reserva: ")
-                .append(code)
-                .append("\n")
-                .append(local.toString());
+             */
+        }finally {
+            lock.unlock();
+        }
+
+
+        String resposta = "Codigo de Reserva: " +
+                code +
+                "\n" +
+                local;
 
         long startTime = System.currentTimeMillis();
-        startTimeMap.put(code,startTime);
+
+        
+
+        try {
+            lock.lock();
+            startTimeMap.put(code,startTime);
+        }finally {
+            lock.unlock();
+        }
+
 
         this.sistemaDeRecompenas.signalSistema();
+        //this.sistemaDeRecompenas.getCondition().signal();
 
-        return resposta.toString();
+
+        return resposta;
     }
 
     public Double estacionaTrot(String code, Tuple localFinal){ //TESTAR
         long endTime = System.currentTimeMillis();
-
-        if(!codigosReserva.containsKey(code)) return -1.0;
-
-        Tuple localInicial = codigosReserva.get(code);
-        Long startTime = startTimeMap.get(code);
-
-        double custo = calculaViagem(startTime, endTime, localInicial, localFinal);
-        //verificar recompensa
-
-
-
+        Tuple localInicial;
+        long startTime;
         try {
-            lock.lock(); //lock questionavel
+            lock.lock();
+
+
+            localInicial = codigosReserva.get(code);
+            startTime = startTimeMap.get(code);
+            double custo = calculaViagem(startTime, endTime, localInicial, localFinal);
+
+
+
             mapa.addTrotinete(localFinal.getX(), localFinal.getY());
+            /*
+            if(this.clienteRecompensa.containsKey(code)) {
+                Recompensa r = this.clienteRecompensa.get(code);
+                this.clienteRecompensa.remove(code);
+
+                Tuple tt = r.getDestino();
+                if(localFinal.equals(tt)){
+                    custo = custo - r.getGanho();
+                }
+            }
+            this.sistemaDeRecompenas.signalSistema();
+            */
+            return custo;
         } finally{lock.unlock();}
 
-        this.sistemaDeRecompenas.signalSistema();
 
-        return custo;
     }
+
+
 
     public double calculaViagem(Long inicioTime,Long finalTime,Tuple localInicial, Tuple localFinal){ //meti uma função para calcular o custo atoa. TESTAR
         double custo =0;
 
         double distanciaViagem = localFinal.calculaDistancia(localInicial);
-        long elapsedTime = inicioTime - finalTime;
+        long elapsedTime = finalTime - inicioTime;
 
-        custo = distanciaViagem * elapsedTime *0.1;
+        custo = distanciaViagem * elapsedTime*0.01;
 
         return custo;
     }
 
-    public static String generateRandomCode() { //TESTAR
+    public static String generateRandomCode() {
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder code = new StringBuilder();
         Random random = new Random();
@@ -182,7 +228,7 @@ class ServerWorker implements Runnable{
                         c.send(tag, new byte[]{(byte)rewards.size()});
 
 
-                        for(Recompensa r : rewards){ // Isto são todas as recompensas, não é suposto
+                        for(Recompensa r : rewards) {
                             c.send(frame.tag, new byte[]{(byte)r.getOrigem().getX()});
                             c.send(frame.tag, new byte[]{(byte)r.getOrigem().getY()});
                             c.send(frame.tag, new byte[]{(byte)r.getDestino().getX()});
@@ -192,16 +238,61 @@ class ServerWorker implements Runnable{
                         }
                         break;
 
-                    case 5: // Cliente quer reservar uma trotinete (Vai dar coordenadas de onde quer estacionar)
-                        c.receive();
+                    case 5: // Cliente quer reservar uma trotinete (Vai dar coordenadas de onde quer reservar)
+                        TaggedConnection.Frame yy = c.receive();
 
-                    case 6:
+                        String codigo = this.sMR.reservaTrot(new Tuple(frame.data[0], yy.data[0]));
+
+                        //System.out.println(codigo);
+
+                        if (codigo == null) {
+                            c.send(tag,new byte[]{(byte)1});
+                        }
+                        else {
+                            c.send(tag,new byte[]{(byte)2});
+                            System.out.println(codigo);
+                            c.send(tag,codigo.getBytes());
+                        }
+
                         break;
 
+
+                    case 6: //cliente quer estacionar a trotinete (vai dar coordenadas onde quer estacionar  -> pode receber recompensa)
+
+                        TaggedConnection.Frame yyy = c.receive();
+
+                        TaggedConnection.Frame infoCode = c.receive();
+                        byte [] resposta = infoCode.data;
+                        String code = new String(resposta);
+                        System.out.println("dede");
+
+                        HashMap<String,Tuple> codigosCheck = sMR.getCodigosReserva();
+
+                        if (codigosCheck.containsKey(code)) {
+                            double custo = this.sMR.estacionaTrot(code, (new Tuple(frame.data[0], yyy.data[0])));
+                            System.out.println("123123123");
+                            c.send(6, new byte[]{(byte) custo});
+                        }
+                        else {
+                            System.out.println("Código errado");
+                            c.send(6,new byte[]{(byte) -1});
+                        }
+
+                        break;
+                    case 7: //cliente quer alterar o seu estado de notificacoes
+
+
+
+
+
+                        break;
+                    default:
+                        //erro na tag
+                        System.out.println("Erro na escolha da tag");
+                        break;
                 }
             }
-        } catch (Exception ignored) { } // criar uma (?)
-        // Fechar Socket?
+        } catch (Exception ignored) { }
     }
 }
 
@@ -211,15 +302,15 @@ public class Server{
         ServerSocket socket = new ServerSocket(12345);
         sistemaMapaRecompensas sMR = new sistemaMapaRecompensas();
         Login login = new Login();
+        notificationHandler nh = new notificationHandler();
 
 
-        // Criar thread de recompensas forever????
+        // Thread a executar Notificações
         Thread permaRewards = new Thread(() -> {
             try {
                 while(true){
-                Thread.sleep(1000); // Desnecessário talvez?
-                sMR.getSistemaDeRecompensas().update_Recompensas(sMR.getMapa());
-                sMR.getSistemaDeRecompensas().awaitSistema();
+                Thread.sleep(300);
+                sMR.getSistemaDeRecompensas().update_Recompensas(sMR.getMapa(),nh);
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -228,8 +319,21 @@ public class Server{
         permaRewards.start();
 
 
+        /*
+        Thread notificacoes = new Thread(() -> {
+            try {
+                while(true){
+                Thread.sleep(300); // Desnecessário talvez?
+                sMR.getSistemaDeRecompensas().update_Recompensas(sMR.getMapa());
+                //sMR.getSistemaDeRecompensas().awaitSistema();
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        permaRewards.start();
+         */
 
-        // Criar thread de notificações forever????
         while(true){
             Socket s = socket.accept();
             TaggedConnection c = new TaggedConnection(s);

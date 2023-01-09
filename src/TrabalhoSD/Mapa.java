@@ -61,7 +61,7 @@ public class Mapa {
 
     public void addTrotinete(int row, int column) {
         try { lock.writeLock().lock();
-            this.map[row][column] += 1;
+            this.map[row][column]++;
         }finally {
             this.lock.writeLock().unlock();
         }

@@ -21,7 +21,7 @@ public class Tuple {
     }
 
     public double calculaDistancia(Tuple tuple){
-        return Math.abs((x)- tuple.getX())+Math.abs(y-tuple.getY());
+        return Math.abs((x)- tuple.getX()) + Math.abs(y-tuple.getY());
     }
 
     public int getX(){

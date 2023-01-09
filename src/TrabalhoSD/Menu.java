@@ -20,9 +20,9 @@ public class Menu {
         System.out.println("0. Sair");
         System.out.println("1. Procurar trotinetes livres");
         System.out.println("2. Procurar recompensas");
-        System.out.println("4. Reservar trotinete");
-        System.out.println("5. Estacionar trotinete");
-        System.out.println("6. Notificacoes");
+        System.out.println("3. Reservar trotinete");
+        System.out.println("4. Estacionar trotinete");
+        System.out.println("5. Ativar/Desativar Notificacoes");
     }
 
 

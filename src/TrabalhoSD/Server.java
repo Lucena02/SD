@@ -138,6 +138,8 @@ class ServerWorker implements Runnable{
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 DataOutputStream out = new DataOutputStream(baos);
 
+                sMR.getMapa().printMatrix();
+
                 switch (tag) {
                     case 1: // Registar Conta
                         TaggedConnection.Frame pass = c.receive();
@@ -154,10 +156,23 @@ class ServerWorker implements Runnable{
 
                         break;
                     case 3: // Cliente quer uma listagem das trotinetes que existem num raio D
-                        System.out.println(sMR.getMapa()); // Trocar isto para dar print do mapa no cliente ( talvez na propria classe cliente )
-                        TaggedConnection.Frame coordx = c.receive();
+                        // System.out.println(sMR.getMapa()); Trocar isto para dar print do mapa no cliente ( talvez na propria classe cliente )
+                        // TaggedConnection.Frame coordx = c.receive();
                         TaggedConnection.Frame coordy = c.receive();
-                        sMR.getMapa().checkT_Livres(2, coordx.data[0], coordy.data[0]);
+                        List<Tuple> tuplos = sMR.getMapa().checkT_Livres(2, frame.data[0], coordy.data[0]);
+
+                        c.send(frame.tag, new byte[]{(byte) tuplos.size()});
+
+                        for(Tuple t : tuplos){
+                            c.send(frame.tag, new byte[]{(byte)t.getX()});
+                            c.send(frame.tag, new byte[]{(byte)t.getY()});
+                            //t.serialize(out);
+                            //out.flush();
+                        }
+                        //c.send(frame.tag, baos.toByteArray());
+
+                        break;
+
                     case 4: // Cliente quer ver as Recompensas que existem num raio D
                         TaggedConnection.Frame x = c.receive();
                         TaggedConnection.Frame y = c.receive();
@@ -166,6 +181,8 @@ class ServerWorker implements Runnable{
                             out.flush();
                         }
                         c.send(tag,baos.toByteArray());
+
+                        break;
 
                     case 5: // Cliente quer reservar uma trotinete (Vai dar coordenadas de onde quer estacionar)
                         System.out.println(sMR.getMapa());

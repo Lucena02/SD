@@ -62,6 +62,30 @@ public class Cliente {
     }
 
 
+    public static void comunicarLocalizacao(Demultiplexer m, Menu menu, int tag){
+        //System.out.println("Nao implementado");
+        int x = menu.lerInt("Insira a coordenada x: ");
+        int y = menu.lerInt("Insira a coordenada y: ");
+
+        boolean b;
+
+        try{
+            // send request
+            m.send(tag, new byte[]{(byte) x});
+            m.send(tag, new byte[]{(byte) y});
+            Thread.sleep(100);
+
+            //System.out.println("Comunicacao bem sucedida");
+
+
+        }catch(Exception e){
+            System.out.println("Erro: "+e);
+        }
+    }
+
+
+
+
     public void register(Demultiplexer m, Menu menu){
 
         String user=menu.lerString("Escolha o username: ");

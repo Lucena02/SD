@@ -2,6 +2,8 @@ package TrabalhoSD;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ClienteHandler {
 
@@ -45,7 +47,7 @@ public class ClienteHandler {
                     register.join();
                     break;
                 case 2:
-                        Thread login = new Thread(() -> {
+                    Thread login = new Thread(() -> {
                         System.out.println("Login:");
                         cliente.login(m, menu);
                     });
@@ -63,11 +65,6 @@ public class ClienteHandler {
 
         if (cliente.isLogin()) {
 
-            //fazer cenas
-            //
-            //      falta a cena fixe
-            //
-            //
             while (op != 0) {
                 try {
                     menu.apresentarMenuLog();
@@ -79,32 +76,109 @@ public class ClienteHandler {
                             System.out.println("A sair...");
                             s.close();
                             break;
-                        case 1:
-                            System.out.println("Introduza as suas coordenadas! \n");
-                            System.out.println("");
-                            //comunicarLocalizacao();
-                            //bar.await(0);
+                        case 1: // Listar trotinetes livres
+                            Thread trotiLivre = new Thread(() -> {
+                                try {
+                                    cliente.comunicarLocalizacao(m, menu, 3);
+
+                                    byte[] size = m.receive(3);
+                                    List<Tuple> result = new ArrayList<>();
+
+                                    for(int i = 0; i < size[0]; i++){
+                                        byte [] datax = m.receive(3);
+                                        int coordx = datax[0];
+                                        byte [] datay = m.receive(3);
+                                        int coordy = datay[0];
+                                        result.add(new Tuple(coordx,coordy));
+                                    }
+
+                                    System.out.println(result);
+
+
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
+                            trotiLivre.start();
+                            trotiLivre.join();
                             break;
                         case 2:
-                            System.out.println("Verificar ocupação de uma Localizacao");
-                            //verificarOcupacao();
-                            //bar.await(0);
+                            System.out.println("Recompensas Disponiveis:");
+
+                            Thread recompensas = new Thread(() -> {
+                                try {
+                                    cliente.comunicarLocalizacao(m, menu, 4);
+
+                                    m.receive(4);
+
+
+                                    //falta dar parse aos dados recebidos
+                                    //falta enviar a resposta
+
+
+
+
+
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
+                            recompensas.start();
+                            recompensas.join();
                             break;
                         case 3:
-                            System.out.println("Imprimir Mapa de ocupaçoes e doentes");
-                            //imprimirMapa();
-                            //bar.await(0);
+                            System.out.println("Reservar trotinete:");
 
+                            Thread reserva = new Thread(() -> {
+                                try {
+                                    cliente.comunicarLocalizacao(m, menu, 5);
+
+                                    m.receive(5);
+
+                                    //falta interpretar a resposta do sevidor
+                                    //sucesso -> coordenadas da trota e código de reserva
+                                    //insucesso -> codigo de insucesso
+
+
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
+
+                            reserva.start();
+                            reserva.join();
                             break;
                         case 4:
-                            System.out.println("Comunicar infeção");
-                            //comunicarInfecao();
-                            //bar.await(0);
+                            System.out.println("Estacionar trotinete");
+
+                            Thread estaciona = new Thread(() -> {
+                                try {
+                                    cliente.comunicarLocalizacao(m, menu, 6);
+
+                                    byte[] teste = menu.lerString("Insira o codigo de reserva").getBytes();
+                                    m.send(6, teste);
+
+                                    Thread.sleep(100);
+                                    m.receive(6);
+
+                                    //falta interpretar a resposta do sevidor
+                                    //sucesso -> coordenadas da trota e código de reserva
+                                    //insucesso -> codigo de insucesso
+
+
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
+
+                            estaciona.start();
+                            estaciona.join();
                             break;
                         case 5:
-                            System.out.println("Notificar quando local está vazio");
-                            //notificarLocalVazio();
-                            //bar.await(0);
+                            System.out.println("Notificoes");
+
+                            //
+
                             break;
                         default:
                             System.out.println("Erro na escolha");

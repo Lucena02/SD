@@ -62,7 +62,7 @@ public class Tuple {
 
     @Override
     public String toString(){
-        return "Localização: (" + x + "," + y + ")";
+        return "Localizacao: (" + x + "," + y + ")";
     }
 
 

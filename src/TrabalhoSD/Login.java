@@ -6,27 +6,40 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Login {
-    public Map<String, String> contas = new HashMap<>();
-    private ReentrantLock lock = new ReentrantLock();
+    public Map<String, String> contas;
+    private ReentrantLock lock;
 
 
-    public Login() {}
+    public Login() {
+        this.contas = new HashMap<>();
+        this.lock = new ReentrantLock();
+    }
 
     public boolean tentativaLogin(String username, String password){
-        lock.lock();
         try {
+            this.lock.lock();
             if (!contas.containsKey(username)) {               // Se a conta não existir
-                contas.put(username, password);
-                System.out.println("Conta foi registada");
+                return false;
             }
             else {
                 if (!Objects.equals(password, contas.get(username))) {
-                    System.out.println("Palavra-passe errada");
                     return false;
                 }
             }
-        } finally {lock.unlock();}
+        } finally {this.lock.unlock();}
 
         return true;
     }
+
+    public boolean register(String username, String password){
+        try{
+            this.lock.lock();
+            if(contas.containsKey(username)) return false;
+            else {
+                contas.put(username,password);
+                return true;
+            }
+        } finally{this.lock.unlock();}
+    }
+
 }

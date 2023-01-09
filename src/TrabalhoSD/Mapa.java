@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Mapa {
@@ -29,14 +30,18 @@ public class Mapa {
         }
     }
 
+    public ReentrantReadWriteLock getLock(){
+        return this.lock;
+    }
 
     public void updateMap(int x, int y, int value){
-        this.map[x][y] = value;
+        try { lock.writeLock().lock();
+            this.map[x][y] = value;
+        }finally {
+            this.lock.writeLock().unlock();
+        }
     }
 
-    public Mapa(int rows, int columns) {
-        this.map = new int[rows][columns];
-    }
 
     public int getRows(){
         return map.length;
@@ -47,23 +52,39 @@ public class Mapa {
     }
 
     public int getNTrotinetes(int row, int column) {
-        return map[row][column];
+        try { lock.readLock().lock();
+            return map[row][column];
+        }finally {
+            this.lock.readLock().unlock();
+        }
     }
 
     public void addTrotinete(int row, int column) {
+        try { lock.writeLock().lock();
             this.map[row][column] += 1;
+        }finally {
+            this.lock.writeLock().unlock();
+        }
     }
 
     public void removeTrotinete(int x, int y){
-        this.map[x][y] -= 1;
+        try { lock.writeLock().lock();
+            this.map[x][y] -= 1;
+        }finally {
+            this.lock.writeLock().unlock();
+        }
     }
 
     public void printMatrix() {
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                System.out.print(this.map[i][j] + " ");
+        try { lock.readLock().lock();
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    System.out.print(this.map[i][j] + " ");
+                }
+                System.out.println();
             }
-            System.out.println();
+        }finally {
+            this.lock.readLock().unlock();
         }
     }
 
@@ -74,7 +95,7 @@ public class Mapa {
             this.lock.readLock().lock();
             for (int i = coordX - fDistance; i <= coordX + fDistance; i++) {
                 for (int j = coordY - fDistance; j <= coordY + fDistance; j++) {
-                    if (i >= 0 && i < N && j >= 0 && j < N && !(i == coordX && j == coordY) && this.map[i][j] != 0 && (Math.abs((coordX)-i)+Math.abs(coordY-j)) <= fDistance) { //pq !(i == coordX && j == coordY) ?
+                    if (i >= 0 && i < N && j >= 0 && j < N && this.map[i][j] != 0 && (Math.abs((coordX)-i)+Math.abs(coordY-j)) <= fDistance) { //pq !(i == coordX && j == coordY) ?
                         Tuplos.add(new Tuple(i,j));
                     }
                 }
@@ -95,12 +116,12 @@ public class Mapa {
             for (int i = coordX - fDistance; i <= coordX + fDistance; i++) {
                 for (int j = coordY - fDistance; j <= coordY + fDistance; j++) {
                     int distance = Math.abs((coordX)-i)+Math.abs(coordY-j);
-                    if (i >= 0 && i < N && j >= 0 && j < N && !(i == coordX && j == coordY) && this.map[i][j] != 0 && distance <= fDistance) {
+                    if (i >= 0 && i < N && j >= 0 && j < N  && this.map[i][j] != 0 && distance <= fDistance) {
                         if (distance < minDistance) {
-                        minDistance = distance;
-                        closestTuple.setX(i);
-                        closestTuple.setY(j);
-                    }
+                            minDistance = distance;
+                            closestTuple.setX(i);
+                            closestTuple.setY(j);
+                        }
                     }
                 }
             }

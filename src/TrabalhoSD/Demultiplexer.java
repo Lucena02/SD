@@ -10,13 +10,15 @@ public class Demultiplexer implements AutoCloseable {
     private TaggedConnection tc;
     private Map<Integer, TaggedFrame> queueMsg;
     private ReentrantLock l;
+
     public Demultiplexer(TaggedConnection conn) {
         this.tc = conn;
         this.queueMsg = new HashMap<>();
         this.l = new ReentrantLock();
     }
+
     public void start() throws IOException {
-        // Tenho que acrescentar uma thread sozinha a executar este código
+
         while(true){
             TaggedConnection.Frame f = this.tc.receive();
             this.l.lock();
@@ -38,7 +40,8 @@ public class Demultiplexer implements AutoCloseable {
     }
 
     public void send(int tag, byte[] data) throws IOException {
-        this.tc.send(tag, data);
+
+            this.tc.send(tag, data);
     }
 
     public byte[] receive(int tag) throws IOException, InterruptedException {
@@ -47,7 +50,7 @@ public class Demultiplexer implements AutoCloseable {
             while(this.queueMsg.get(tag).msgDeque.isEmpty())
                 this.queueMsg.get(tag).c.await();
 
-            TaggedConnection.Frame f = this.queueMsg.get(tag).msgDeque.element();
+            TaggedConnection.Frame f = this.queueMsg.get(tag).msgDeque.remove();
             return f.data;
         }finally {
             this.l.unlock();

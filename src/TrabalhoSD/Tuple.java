@@ -1,5 +1,9 @@
 package TrabalhoSD;
 
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 
 public class Tuple {
@@ -59,6 +63,19 @@ public class Tuple {
     @Override
     public String toString(){
         return "Localização: (" + x + "," + y + ")";
+    }
+
+
+    public void serialize(DataOutputStream out) throws IOException {
+        out.writeInt(this.x);
+        out.writeInt(this.y);
+    }
+
+    public static Tuple deserialize(DataInputStream in) throws IOException {
+        int x = in.readInt();
+        int y = in.readInt();
+
+        return new Tuple(x,y);
     }
 
 }

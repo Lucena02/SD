@@ -12,10 +12,16 @@ public class SistemaRecompensas {
     private ReentrantReadWriteLock l;
     private Condition c;
 
-    public void SistemaRecompensas(ReentrantReadWriteLock lock){
-        this.l= lock;
+    public SistemaRecompensas(ReentrantReadWriteLock l) {
+        this.l= l;
         this.c = l.writeLock().newCondition();
     }
+
+
+    public void signalSistema(){
+        this.c.signal();
+    }
+
 
 
 
@@ -56,12 +62,22 @@ public class SistemaRecompensas {
         return ids;
     }
 
+    public List<Recompensa> getRecompensasDistancia(Tuple tuplo,int fDistance){
+        List<Recompensa> r = new ArrayList<>();
+
+
+        for(Map.Entry<Integer, Recompensa> entry : mapRecompensas.entrySet()){
+            if(fDistance >= (tuplo.calculaDistancia(entry.getValue().getOrigem()))) {
+                r.add(entry.getValue());
+            }
+        }
+        return r;
+    }
+
 
     public Map<Integer, Recompensa> getMapRecompensas() {
         return mapRecompensas;
     }
-
-
 
 
 }

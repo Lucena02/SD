@@ -16,7 +16,7 @@ public class main {
         Mapa m = new Mapa();
         m.printMatrix();
         //m.checkT_Livres(2, 2,2);
-        SistemaRecompensas sistema = new SistemaRecompensas();
+        SistemaRecompensas sistema = new SistemaRecompensas(m.getLock());
         sistema.update_Recompensas(m);
         System.out.print("\n \n \n");
         System.out.print(sistema.getMapRecompensas().values());

@@ -139,6 +139,7 @@ class ServerWorker implements Runnable{
                 DataOutputStream out = new DataOutputStream(baos);
 
                 sMR.getMapa().printMatrix();
+                System.out.println("-------------------------------------------");
 
                 switch (tag) {
                     case 1: // Registar Conta
@@ -174,18 +175,24 @@ class ServerWorker implements Runnable{
                         break;
 
                     case 4: // Cliente quer ver as Recompensas que existem num raio D
-                        TaggedConnection.Frame x = c.receive();
+                        //TaggedConnection.Frame x = c.receive();
                         TaggedConnection.Frame y = c.receive();
-                        for(Recompensa r : this.sMR.getSistemaDeRecompensas().getRecompensasDistancia(new Tuple(x.data[0],y.data[0]), 2)){ // Isto são todas as recompensas, não é suposto
-                            r.serialize(out);
-                            out.flush();
-                        }
-                        c.send(tag,baos.toByteArray());
 
+                        List<Recompensa> rewards = this.sMR.getSistemaDeRecompensas().getRecompensasDistancia(new Tuple(frame.data[0],y.data[0]), 2);
+                        c.send(tag, new byte[]{(byte)rewards.size()});
+
+
+                        for(Recompensa r : rewards){ // Isto são todas as recompensas, não é suposto
+                            c.send(frame.tag, new byte[]{(byte)r.getOrigem().getX()});
+                            c.send(frame.tag, new byte[]{(byte)r.getOrigem().getY()});
+                            c.send(frame.tag, new byte[]{(byte)r.getDestino().getX()});
+                            c.send(frame.tag, new byte[]{(byte)r.getDestino().getY()});
+                            c.send(frame.tag, new byte[]{(byte)r.getDistancia()});
+                            c.send(frame.tag, new byte[]{(byte)r.getGanho()});
+                        }
                         break;
 
                     case 5: // Cliente quer reservar uma trotinete (Vai dar coordenadas de onde quer estacionar)
-                        System.out.println(sMR.getMapa());
                         c.receive();
 
                     case 6:
@@ -205,7 +212,23 @@ public class Server{
         sistemaMapaRecompensas sMR = new sistemaMapaRecompensas();
         Login login = new Login();
 
+
         // Criar thread de recompensas forever????
+        Thread permaRewards = new Thread(() -> {
+            try {
+                while(true){
+                Thread.sleep(1000); // Desnecessário talvez?
+                sMR.getSistemaDeRecompensas().update_Recompensas(sMR.getMapa());
+                sMR.getSistemaDeRecompensas().awaitSistema();
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        permaRewards.start();
+
+
+
         // Criar thread de notificações forever????
         while(true){
             Socket s = socket.accept();

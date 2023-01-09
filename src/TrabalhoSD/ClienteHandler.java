@@ -1,5 +1,8 @@
 package TrabalhoSD;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -13,6 +16,11 @@ public class ClienteHandler {
         Socket s = new Socket("localhost", 12345);
         Demultiplexer m = new Demultiplexer(new TaggedConnection(s));
         Cliente cliente = new Cliente();
+
+        byte[] buffer = new byte[256];
+        ByteArrayInputStream baos = new ByteArrayInputStream(buffer);
+        DataInputStream in = new DataInputStream(baos);
+
         Menu menu = new Menu();
 
         // menu login ou register
@@ -109,15 +117,20 @@ public class ClienteHandler {
                                 try {
                                     cliente.comunicarLocalizacao(m, menu, 4);
 
-                                    m.receive(4);
+                                    byte[] sizeR = m.receive(4);
+                                    List<Recompensa> rewards = new ArrayList<>();
 
+                                    for(int i = 0; i < sizeR[0]; i++){
+                                        byte [] datax1 = m.receive(4);
+                                        byte [] datay1 = m.receive(4);
+                                        byte [] datax2 = m.receive(4);
+                                        byte [] datay2 = m.receive(4);
+                                        byte [] distancia = m.receive(4);
+                                        byte [] ganho = m.receive(4);
+                                        rewards.add(new Recompensa(new Tuple(datax1[0], datay1[0]), new Tuple(datax2[0], datay2[0]), distancia[0], ganho[0]));
+                                    }
 
-                                    //falta dar parse aos dados recebidos
-                                    //falta enviar a resposta
-
-
-
-
+                                    System.out.println(rewards);
 
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
@@ -133,12 +146,37 @@ public class ClienteHandler {
                                 try {
                                     cliente.comunicarLocalizacao(m, menu, 5);
 
-                                    m.receive(5);
+                                    byte[] size = m.receive(5);
+                                    int tamanho = size[0];
 
-                                    //falta interpretar a resposta do sevidor
-                                    //sucesso -> coordenadas da trota e código de reserva
-                                    //insucesso -> codigo de insucesso
+                                    switch (tamanho){
 
+                                        case 1:
+
+                                            //erro na escolha da trotinete
+                                            byte [] resposta1 = m.receive(5);
+                                            String erro = new String(resposta1);
+
+                                            System.out.println(erro);
+                                            break;
+
+                                        case 2:
+
+                                            //sucesso na reserva da trotinete
+                                            byte [] datax = m.receive(5);
+                                            int coordx = datax[0];
+                                            byte [] datay = m.receive(5);
+                                            int coordy = datay[0];
+                                            byte [] resposta2 = m.receive(5);
+                                            String sucesso = new String(resposta2);
+
+                                            System.out.println("Trotinete reservada com sucesso!\n\nCoordenadas: x->" + coordx + " y->" + coordy + "\nCodigo de reserva: " + sucesso);
+
+                                        default:
+
+                                            System.out.println("Erro na escolha");
+                                            break;
+                                    }
 
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);

@@ -10,6 +10,13 @@ public class Recompensa {
     private double distancia;
     private double ganho;
 
+
+    public Recompensa(){
+        this.origem = null;
+        this.destino = null;
+        this.distancia = 0;
+        this.ganho = 0;
+    }
     public Recompensa(Tuple origem, Tuple destino){
         this.origem = origem;
         this.destino = destino;
@@ -28,6 +35,11 @@ public class Recompensa {
         return this.origem;
     }
 
+    public Tuple getDestino() { return this.destino; }
+
+    public double getDistancia() { return distancia;}
+
+    public double getGanho() { return ganho;}
 
     @Override
     public String toString() {

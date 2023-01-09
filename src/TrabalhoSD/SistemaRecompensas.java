@@ -22,6 +22,9 @@ public class SistemaRecompensas {
         this.c.signal();
     }
 
+    public void awaitSistema() throws InterruptedException {
+        this.c.await();
+    }
 
 
 
@@ -45,6 +48,7 @@ public class SistemaRecompensas {
             i++;
         }
 
+        System.out.print("\n");
         System.out.print(trotinetesPremiadas);
         System.out.print("\n");
         System.out.print(chegadasPremiadas);
@@ -65,7 +69,6 @@ public class SistemaRecompensas {
     public List<Recompensa> getRecompensasDistancia(Tuple tuplo,int fDistance){
         List<Recompensa> r = new ArrayList<>();
 
-
         for(Map.Entry<Integer, Recompensa> entry : mapRecompensas.entrySet()){
             if(fDistance >= (tuplo.calculaDistancia(entry.getValue().getOrigem()))) {
                 r.add(entry.getValue());
@@ -78,6 +81,8 @@ public class SistemaRecompensas {
     public Map<Integer, Recompensa> getMapRecompensas() {
         return mapRecompensas;
     }
+
+
 
 
 }

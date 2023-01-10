@@ -47,7 +47,7 @@ class sistemaMapaRecompensas {
     public String reservaTrot(Tuple tuplo){
 
         Tuple local =null;
-
+        Recompensa r = null;
 
 
 
@@ -68,11 +68,9 @@ class sistemaMapaRecompensas {
         try {
             lock.lock();
             codigosReserva.put(code, local);
-            /*
-            Recompensa r = sistemaDeRecompenas.verificaRecompensa(tuplo);
+            r = sistemaDeRecompenas.verificaRecompensa(tuplo);
             if(!(r==null)) this.clienteRecompensa.put(code,r);
 
-             */
         }finally {
             lock.unlock();
         }
@@ -85,7 +83,7 @@ class sistemaMapaRecompensas {
 
         long startTime = System.currentTimeMillis();
 
-        
+
 
         try {
             lock.lock();
@@ -96,7 +94,6 @@ class sistemaMapaRecompensas {
 
 
         this.sistemaDeRecompenas.signalSistema();
-        //this.sistemaDeRecompenas.getCondition().signal();
 
 
         return resposta;

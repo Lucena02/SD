@@ -205,7 +205,7 @@ public class ClienteHandler {
 
                                         if (valorviagem != -1) {
 
-
+                                            if(valorviagem < 0) valorviagem = valorviagem * -1;
 
                                             System.out.println("Tem de pagar " + valorviagem + " pela viagem\n");
                                             cliente.setHasReserva(false);
